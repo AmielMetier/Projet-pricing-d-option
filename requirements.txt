@@ -1,0 +1,17 @@
+# Calcul numérique
+numpy>=1.26
+scipy>=1.11
+
+# Données
+pandas>=2.1
+yfinance>=0.2.40
+
+# Figures
+matplotlib>=3.8
+
+# Notebooks
+jupyterlab>=4.0
+ipykernel>=6.25
+
+# Tests
+pytest>=7.4

@@ -1,0 +1,50 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Tests et couverture
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Données de marché (régénérées par les notebooks) ---
+data/*
+!data/.gitkeep
+
+# --- LaTeX (fichiers auxiliaires ; le PDF final reste versionné) ---
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+_minted*/
+
+# --- IDE ---
+.vscode/
+.idea/
+
+# --- Système ---
+.DS_Store
+Thumbs.db
