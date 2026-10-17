@@ -4,9 +4,7 @@
 
     σ_loc²(K, T) = (∂C/∂T + r K ∂C/∂K) / (½ K² ∂²C/∂K²).
 
-Les dérivées sont approchées par différences finies. Le dénominateur
-(densité risque-neutre, à un facteur près) est petit loin de la monnaie,
-ce qui rend la formule sensible au bruit sur les prix.
+Les dérivées sont approchées par différences finies.
 """
 
 from __future__ import annotations
@@ -17,7 +15,7 @@ import numpy as np
 def price_derivatives(
     K: np.ndarray, T: np.ndarray, C: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Dérivées de C par différences finies centrées.
+    """Dérivées de C par différences finies.
 
     Paramètres
     ----------
@@ -27,8 +25,7 @@ def price_derivatives(
 
     Retour
     ------
-    (∂C/∂T, ∂C/∂K, ∂²C/∂K²), chacun de taille (n_T, n_K) ; NaN sur les bords
-    où le schéma centré n'est pas défini.
+    (∂C/∂T, ∂C/∂K, ∂²C/∂K²), chacun de taille (n_T, n_K).
     """
     raise NotImplementedError("Issue #4")
 

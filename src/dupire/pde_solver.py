@@ -8,10 +8,8 @@ vérifie, à S₀ fixé :
 avec la condition initiale C(K, 0) = (S₀ − K)⁺ et les conditions au bord
 C(0, T) = S₀, C(K_max, T) = 0.
 
-On discrétise en K par différences finies centrées et en T par un θ-schéma :
-θ = 0 explicite, θ = ½ Crank-Nicolson, θ = 1 implicite. Le lissage de
-Rannacher remplace les premiers pas de Crank-Nicolson par des demi-pas
-implicites pour amortir les oscillations dues au coin du payoff en K = S₀.
+Discrétisation en T par un θ-schéma : θ = 0 explicite, θ = ½ Crank-Nicolson,
+θ = 1 implicite, avec un lissage de Rannacher optionnel.
 """
 
 from __future__ import annotations
@@ -47,9 +45,6 @@ def dupire_operator(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Discrétise l'opérateur L C = ½ σ² K² ∂²C/∂K² − r K ∂C/∂K.
 
-    Différences finies centrées sur les nœuds intérieurs d'une grille
-    uniforme en K.
-
     Paramètres
     ----------
     K : grille de strikes (uniforme), bords compris.
@@ -78,9 +73,6 @@ def solve_dupire_pde(
 ) -> PDEGrid:
     """Résout l'EDP de Dupire sur [0, K_max] × [0, T_max].
 
-    À chaque pas, le système (I − θ Δt L) Cⁿ⁺¹ = (I + (1 − θ) Δt L) Cⁿ est
-    tridiagonal et résolu par ``scipy.linalg.solve_banded``.
-
     Paramètres
     ----------
     S0 : prix initial du sous-jacent.
@@ -91,7 +83,7 @@ def solve_dupire_pde(
     n_K : nombre de pas en strike.
     n_T : nombre de pas en maturité.
     theta : paramètre du θ-schéma (½ pour Crank-Nicolson).
-    n_rannacher : nombre de demi-pas implicites au démarrage (0 : aucun lissage).
+    n_rannacher : nombre de pas de lissage de Rannacher au démarrage (0 : aucun lissage).
 
     Retour
     ------
