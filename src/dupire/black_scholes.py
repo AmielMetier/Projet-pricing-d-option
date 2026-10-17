@@ -62,8 +62,7 @@ def bs_vega(
 ) -> np.ndarray:
     """Vega (dérivée du prix par rapport à σ) : ∂C/∂σ = S φ(d1) √T.
 
-    Identique pour le call et le put. Utilisée par la méthode de Newton
-    de :func:`implied_vol`.
+    Identique pour le call et le put.
     """
     raise NotImplementedError("Issue #2")
 
@@ -80,17 +79,13 @@ def implied_vol(
 ) -> np.ndarray:
     """Volatilité implicite : σ telle que le prix Black-Scholes égale ``price``.
 
-    Méthode de Newton sur la vega, avec repli sur la dichotomie
-    (``scipy.optimize.brentq``) quand la vega est trop petite (options très
-    en dehors de la monnaie).
-
     Paramètres
     ----------
     price : prix observé de l'option.
     S, K, T, r : voir :func:`d1_d2`.
     option_type : ``"call"`` ou ``"put"``.
     tol : tolérance sur l'écart de prix.
-    max_iter : nombre maximal d'itérations de Newton.
+    max_iter : nombre maximal d'itérations.
 
     Retour
     ------

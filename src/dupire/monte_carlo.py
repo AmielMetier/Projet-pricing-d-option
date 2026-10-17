@@ -1,11 +1,7 @@
 """Monte Carlo sous volatilité locale.
 
 On simule dS_t = r S_t dt + σ_loc(S_t, t) S_t dW_t par un schéma d'Euler sur
-X = log S :
-
-    X_{n+1} = X_n + (r − ½ σ_loc²(S_n, t_n)) Δt + σ_loc(S_n, t_n) √Δt Z_n,
-
-avec Z_n ~ N(0, 1). Le schéma en log garde S > 0.
+log S.
 """
 
 from __future__ import annotations
@@ -65,9 +61,7 @@ def simulate_paths(
 def mc_price(
     payoffs: np.ndarray, r: float, T: float, confidence: float = 0.95
 ) -> MCResult:
-    """Prix Monte Carlo et intervalle de confiance gaussien.
-
-    prix = e^{−rT} moyenne(payoffs), IC = prix ± q · e^{−rT} écart-type / √N.
+    """Prix Monte Carlo actualisé et intervalle de confiance.
 
     Paramètres
     ----------
