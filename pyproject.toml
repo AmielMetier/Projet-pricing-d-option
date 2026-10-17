@@ -1,0 +1,5 @@
+# Configuration de pytest uniquement : le code vit dans src/, on l'ajoute au chemin
+# d'import pour que `import dupire` fonctionne sans installer le paquet.
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
