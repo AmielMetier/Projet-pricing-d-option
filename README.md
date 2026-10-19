@@ -9,7 +9,7 @@ Mini-projet de calcul numérique pour la finance : mise en œuvre du **modèle d
 
 - Amiel Metier
 - Nicolas Muratore
-- Tahitowa Senis
+- Tahitoa Senis
 
 ## Objectifs
 
