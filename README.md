@@ -8,7 +8,7 @@ Mini-projet de calcul numérique pour la finance : mise en œuvre du **modèle d
 ## Équipe
 
 - Amiel Metier
-- Nicolas Muratore
+- Nicolas Muratore 
 - Tahitoa Senis
 
 ## Objectifs
