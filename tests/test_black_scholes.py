@@ -94,3 +94,57 @@ def test_vectorization_strikes():
     assert np.all(np.diff(calls) < 0)
     # Les prix de puts doivent être strictement croissants en fonction du strike
     assert np.all(np.diff(puts) > 0)
+
+
+def test_implied_vol_arbitrage_bounds():
+    """Vérifie que les prix hors bornes d'arbitrage renvoient NaN et non une vol erronée."""
+    S = 100.0
+    K = 100.0
+    T = 1.0
+    r = 0.05
+    q = 0.0
+
+    lower_bound = max(S * np.exp(-q * T) - K * np.exp(-r * T), 0.0)
+    upper_bound = S * np.exp(-q * T)
+
+    # Prix inférieur à la borne inférieure d'arbitrage
+    assert np.isnan(bs_implied_vol(lower_bound - 1.0, S, K, T, r, q))
+    assert np.isnan(bs_implied_vol(-5.0, S, K, T, r, q))
+
+    # Prix supérieur à la borne supérieure d'arbitrage (S * e^(-qT))
+    assert np.isnan(bs_implied_vol(upper_bound + 5.0, S, K, T, r, q))
+
+    # Maturité nulle ou négative
+    assert np.isnan(bs_implied_vol(5.0, S, K, 0.0, r, q))
+    assert np.isnan(bs_implied_vol(5.0, S, K, -0.5, r, q))
+
+
+def test_implied_vol_put():
+    """Vérifie l'inversion de la volatilité implicite pour les Puts."""
+    S = 100.0
+    K = 95.0
+    T = 0.5
+    r = 0.02
+    q = 0.01
+    true_vol = 0.22
+
+    put_price = bs_put_price(S, K, T, r, q, true_vol)
+    recovered_vol = bs_implied_vol(put_price, S, K, T, r, q, option_type="put", tol=1e-7)
+
+    assert not np.isnan(recovered_vol)
+    assert np.isclose(recovered_vol, true_vol, atol=1e-5)
+
+
+def test_implied_vol_list_of_strikes():
+    """Vérifie le calcul de vol implicite sur une série de strikes via une compréhension de liste."""
+    S = 100.0
+    strikes = [90.0, 100.0, 110.0]
+    T = 1.0
+    r = 0.03
+    q = 0.01
+    vol = 0.25
+
+    prices = [bs_call_price(S, k, T, r, q, vol) for k in strikes]
+    recovered_vols = [bs_implied_vol(p, S, k, T, r, q, tol=1e-7) for p, k in zip(prices, strikes)]
+
+    assert np.allclose(recovered_vols, vol, atol=1e-4)
