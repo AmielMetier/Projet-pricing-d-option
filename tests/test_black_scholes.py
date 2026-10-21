@@ -6,6 +6,7 @@ from dupire.black_scholes import (
     bs_put_price,
     bs_vega,
     d1_d2,
+    implied_vol_surface,
 )
 
 
@@ -148,3 +149,26 @@ def test_implied_vol_list_of_strikes():
     recovered_vols = [bs_implied_vol(p, S, k, T, r, q, tol=1e-7) for p, k in zip(prices, strikes)]
 
     assert np.allclose(recovered_vols, vol, atol=1e-4)
+
+
+def test_implied_vol_surface():
+    """Vérifie l'inversion d'une grille 2D de prix via implied_vol_surface."""
+    S = 100.0
+    strikes = np.array([90.0, 100.0, 110.0])
+    maturities = np.array([0.5, 1.0, 1.5])
+    r = 0.03
+    q = 0.01
+    vol_target = 0.20
+
+    # Grille de prix théoriques
+    prices = np.zeros((len(maturities), len(strikes)))
+    for i, T in enumerate(maturities):
+        for j, K in enumerate(strikes):
+            prices[i, j] = bs_call_price(S, K, T, r, q, vol_target)
+
+    # Inversion de la surface
+    surface = implied_vol_surface(prices, S, strikes, maturities, r, q)
+
+    assert surface.shape == (len(maturities), len(strikes))
+    assert np.allclose(surface, vol_target, atol=1e-4)
+

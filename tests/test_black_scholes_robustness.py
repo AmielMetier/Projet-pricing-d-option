@@ -7,6 +7,7 @@ from dupire.black_scholes import (
     bs_put_price,
     bs_vega,
     d1_d2,
+    implied_vol_surface,
 )
 
 
@@ -169,3 +170,41 @@ def test_strike_monotonicity_and_convexity():
     # 2. Convexité du Call : dérivée seconde discrète >= 0 (absence d'arbitrage papillon)
     second_diff = np.diff(calls, n=2)
     assert np.all(second_diff >= -1e-12)
+
+
+# ============================================================================
+# 6. SURFACE DE VOLATILITÉ AVEC CELLULES D'ARBITRAGE
+# ============================================================================
+
+
+def test_implied_vol_surface_robustness():
+    """Vérifie que la surface gère les valeurs aberrantes en injectant des NaN locaux."""
+    S = 100.0
+    strikes = np.array([80.0, 100.0, 120.0])
+    maturities = np.array([0.25, 1.0])
+    r = 0.03
+    q = 0.0
+    vol = 0.20
+
+    # Grille avec prix normaux
+    prices = np.zeros((len(maturities), len(strikes)))
+    for i, T in enumerate(maturities):
+        for j, K in enumerate(strikes):
+            prices[i, j] = bs_call_price(S, K, T, r, q, vol)
+
+    # Corrompre une cellule avec un prix d'arbitrage
+    prices[0, 2] = -10.0  # Prix négatif
+    prices[1, 0] = 200.0  # Prix supérieur à S
+
+    surface = implied_vol_surface(prices, S, strikes, maturities, r, q)
+
+    # Les cellules corrompues doivent valoir NaN
+    assert np.isnan(surface[0, 2])
+    assert np.isnan(surface[1, 0])
+
+    # Les cellules saines doivent retrouver la vraie volatilité
+    assert np.isclose(surface[0, 0], vol, atol=1e-3)
+    assert np.isclose(surface[0, 1], vol, atol=1e-3)
+    assert np.isclose(surface[1, 1], vol, atol=1e-3)
+    assert np.isclose(surface[1, 2], vol, atol=1e-3)
+
