@@ -29,7 +29,7 @@ def bs_put_price(S, K, T, r, q, sigma):
 
 def bs_vega(S, K, T, r, q, sigma):
     """Dérivée du prix par rapport à sigma (Vega)."""
-    if T <= 0:
+    if T <= 0 or sigma <= 0:
         return 0.0
     d1, _ = d1_d2(S, K, T, r, q, sigma)
     return S * np.exp(-q * T) * np.sqrt(T) * norm.pdf(d1)
@@ -74,22 +74,29 @@ def bs_implied_vol(market_price, S, K, T, r, q, option_type="call", tol=1e-6, ma
 
     # 4. Méthode de Newton-Raphson
     sigma = 0.20
+    converged = False
     for _ in range(max_iter):
         price = bs_call_price(S, K, T, r, q, sigma)
         diff = price - market_price
-
-        if abs(diff) < tol:
-            return float(sigma)
-
         vega = bs_vega(S, K, T, r, q, sigma)
+
         if vega < 1e-8:
             break
 
-        sigma -= diff / vega
+        step = diff / vega
+        sigma -= step
+
+        # Double critère d'arrêt : précision sur le prix ET sur la volatilité
+        if abs(diff) < tol and abs(step) < tol:
+            converged = True
+            break
 
         # Sécurité pour ne pas diverger vers des valeurs négatives ou géantes
         if sigma <= 0 or sigma > 5.0:
             break
+
+    if converged and sigma > 0:
+        return float(sigma)
 
     # 5. Fallback : solveur robuste par encadrement (Brent) si Newton a échoué
     try:
