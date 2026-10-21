@@ -6,17 +6,12 @@ Contenu
 - bs_implied_vol                              : vol implicite (Newton + fallback Brent)
 - implied_vol_surface                         : surface sigma_imp(T, K) à partir d'une grille de prix
 
-Convention : les formules fermées acceptent scalaires et tableaux de strikes (broadcasting NumPy).
-Pour une grille 2D de prix, voir `implied_vol_surface`.
 """
 import numpy as np
 from scipy.optimize import brentq
 from scipy.stats import norm
 
 
-# ---------------------------------------------------------------------------
-# Formules fermées
-# ---------------------------------------------------------------------------
 def d1_d2(S, K, T, r, q, sigma):
     """Calcule d1 et d2 de Black-Scholes (T > 0 et sigma > 0 requis)."""
     d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
@@ -62,27 +57,7 @@ def bs_vega(S, K, T, r, q, sigma):
 # Volatilité implicite
 # ---------------------------------------------------------------------------
 def bs_implied_vol(market_price, S, K, T, r, q, option_type="call", tol=1e-6, max_iter=50):
-    """Calcule la volatilité implicite par Newton-Raphson avec fallback Brent.
-
-    Paramètres
-    ----------
-    market_price : float
-        Prix observé de l'option sur le marché.
-    S, K, T, r, q : float
-        Paramètres du modèle Black-Scholes.
-    option_type : str, default 'call'
-        Type d'option ('call' ou 'put').
-    tol : float, default 1e-6
-        Précision souhaitée sur le prix et sur la volatilité.
-    max_iter : int, default 50
-        Nombre maximal d'itérations pour Newton-Raphson.
-
-    Retour
-    ------
-    float
-        Volatilité implicite, ou np.nan si impossible (T <= 0, prix hors bornes
-        d'arbitrage, vol hors de [1e-4, 5.0], non convergence).
-    """
+    """Calcule la volatilité implicite par Newton-Raphson avec fallback Brent."""
     # 1. Vérification des paramètres fondamentaux
     if T <= 0 or S <= 0 or K <= 0 or market_price < 0:
         return np.nan
@@ -136,19 +111,7 @@ def bs_implied_vol(market_price, S, K, T, r, q, option_type="call", tol=1e-6, ma
 
 
 def implied_vol_surface(prices, S, strikes, maturities, r, q, option_type="call"):
-    """Inverse une grille de prix en surface de vol implicite.
-
-    Paramètres
-    ----------
-    prices : array (len(maturities), len(strikes))
-        Prix d'options, une ligne par maturité, une colonne par strike.
-    strikes, maturities : array 1D
-        Vecteurs des strikes et des maturités.
-
-    Retour
-    ------
-    array de même forme que `prices` (NaN là où l'inversion est impossible).
-    """
+    """Inverse une grille de prix en surface de vol implicite."""
     prices = np.asarray(prices, dtype=float)
     surface = np.full(prices.shape, np.nan)
     for i, T in enumerate(maturities):
