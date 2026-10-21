@@ -53,9 +53,7 @@ def bs_vega(S, K, T, r, q, sigma):
     return S * np.exp(-q * T) * np.sqrt(T) * norm.pdf(d1)
 
 
-# ---------------------------------------------------------------------------
-# Volatilité implicite
-# ---------------------------------------------------------------------------
+
 def bs_implied_vol(market_price, S, K, T, r, q, option_type="call", tol=1e-6, max_iter=50):
     """Calcule la volatilité implicite par Newton-Raphson avec fallback Brent."""
     # 1. Vérification des paramètres fondamentaux
