@@ -2,8 +2,8 @@
 
 Contenu
 -------
-- d1_d2, bs_call_price, bs_put_price, bs_vega : formules fermées (modèle avec dividende continu q)
-- bs_implied_vol                              : vol implicite (Newton + fallback Brent)
+- d1_d2, bs_call_price, bs_put_price, bs_vega : formules fermées (modèle avec dividende continu q, q=0.0 par défaut)
+- bs_implied_vol                              : vol implicite (Newton + fallback Brent, q=0.0 par défaut)
 - implied_vol_surface                         : surface sigma_imp(T, K) à partir d'une grille de prix
 
 """
@@ -11,19 +11,38 @@ import numpy as np
 from scipy.optimize import brentq
 from scipy.stats import norm
 
+_DEFAULT = object()
 
-def d1_d2(S, K, T, r, q, sigma):
-    """Calcule d1 et d2 de Black-Scholes (T > 0 et sigma > 0 requis)."""
+
+def _resolve_q_sigma(q, sigma):
+    """Permet d'omettre q (défaut q=0.0) que sigma soit passé en positionnel ou par mot-clé."""
+    if sigma is _DEFAULT:
+        if q is _DEFAULT:
+            raise TypeError("Paramètre requis manquant : 'sigma'")
+        return 0.0, q
+    if q is _DEFAULT:
+        return 0.0, sigma
+    return q, sigma
+
+
+def d1_d2(S, K, T, r, q=_DEFAULT, sigma=_DEFAULT):
+    """Calcule d1 et d2 de Black-Scholes (T > 0 et sigma > 0 requis).
+    
+    q vaut 0.0 par défaut s'il est omis.
+    """
+    q, sigma = _resolve_q_sigma(q, sigma)
     d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
     return d1, d2
 
 
-def bs_call_price(S, K, T, r, q, sigma):
+def bs_call_price(S, K, T, r, q=_DEFAULT, sigma=_DEFAULT):
     """Prix analytique d'un Call européen.
 
+    Dividende continu q=0.0 par défaut s'il est omis.
     Cas limites : T <= 0 -> payoff ; sigma <= 0 -> valeur intrinsèque forward.
     """
+    q, sigma = _resolve_q_sigma(q, sigma)
     if np.all(T <= 0):
         return np.maximum(S - K, 0.0)
     if np.all(sigma <= 0):
@@ -32,11 +51,13 @@ def bs_call_price(S, K, T, r, q, sigma):
     return S * np.exp(-q * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
 
 
-def bs_put_price(S, K, T, r, q, sigma):
+def bs_put_price(S, K, T, r, q=_DEFAULT, sigma=_DEFAULT):
     """Prix analytique d'un Put européen.
 
+    Dividende continu q=0.0 par défaut s'il est omis.
     Cas limites : T <= 0 -> payoff ; sigma <= 0 -> valeur intrinsèque forward.
     """
+    q, sigma = _resolve_q_sigma(q, sigma)
     if np.all(T <= 0):
         return np.maximum(K - S, 0.0)
     if np.all(sigma <= 0):
@@ -45,17 +66,27 @@ def bs_put_price(S, K, T, r, q, sigma):
     return K * np.exp(-r * T) * norm.cdf(-d2) - S * np.exp(-q * T) * norm.cdf(-d1)
 
 
-def bs_vega(S, K, T, r, q, sigma):
-    """Dérivée du prix par rapport à sigma (Vega), identique pour call et put."""
+def bs_vega(S, K, T, r, q=_DEFAULT, sigma=_DEFAULT):
+    """Dérivée du prix par rapport à sigma (Vega), identique pour call et put.
+
+    Dividende continu q=0.0 par défaut s'il est omis.
+    """
+    q, sigma = _resolve_q_sigma(q, sigma)
     if np.all(T <= 0) or np.all(sigma <= 0):
         return 0.0 if np.isscalar(K) else np.zeros_like(K, dtype=float)
     d1, _ = d1_d2(S, K, T, r, q, sigma)
     return S * np.exp(-q * T) * np.sqrt(T) * norm.pdf(d1)
 
 
+def bs_implied_vol(market_price, S, K, T, r, q=0.0, option_type="call", tol=1e-6, max_iter=50):
+    """Calcule la volatilité implicite par Newton-Raphson avec fallback Brent.
 
-def bs_implied_vol(market_price, S, K, T, r, q, option_type="call", tol=1e-6, max_iter=50):
-    """Calcule la volatilité implicite par Newton-Raphson avec fallback Brent."""
+    Dividende continu q=0.0 par défaut s'il est omis.
+    """
+    if isinstance(q, str):
+        option_type = q
+        q = 0.0
+
     # 1. Vérification des paramètres fondamentaux
     if T <= 0 or S <= 0 or K <= 0 or market_price < 0:
         return np.nan
@@ -108,8 +139,15 @@ def bs_implied_vol(market_price, S, K, T, r, q, option_type="call", tol=1e-6, ma
         return np.nan
 
 
-def implied_vol_surface(prices, S, strikes, maturities, r, q, option_type="call"):
-    """Inverse une grille de prix en surface de vol implicite."""
+def implied_vol_surface(prices, S, strikes, maturities, r, q=0.0, option_type="call"):
+    """Inverse une grille de prix en surface de vol implicite.
+
+    Dividende continu q=0.0 par défaut s'il est omis.
+    """
+    if isinstance(q, str):
+        option_type = q
+        q = 0.0
+
     prices = np.asarray(prices, dtype=float)
     surface = np.full(prices.shape, np.nan)
     for i, T in enumerate(maturities):
@@ -121,9 +159,9 @@ def implied_vol_surface(prices, S, strikes, maturities, r, q, option_type="call"
 if __name__ == "__main__":
     S0, K0, T0, r0, q0, vol0 = 100.0, 100.0, 1.0, 0.03, 0.0, 0.20
 
-    prix_call = bs_call_price(S0, K0, T0, r0, q0, vol0)
-    vol_retrouvee = bs_implied_vol(prix_call, S0, K0, T0, r0, q0)
+    prix_call = bs_call_price(S0, K0, T0, r0, vol0)  # q omis -> q=0.0 par défaut
+    vol_retrouvee = bs_implied_vol(prix_call, S0, K0, T0, r0)
 
-    print(f"Prix Call BS     : {prix_call:.4f}")
-    print(f"Volatilité cible : {vol0:.2%}")
-    print(f"Vol retrouvée    : {vol_retrouvee:.2%}")
+    print(f"Prix Call BS (q=0.0 par défaut) : {prix_call:.4f}")
+    print(f"Volatilité cible                : {vol0:.2%}")
+    print(f"Vol retrouvée                   : {vol_retrouvee:.2%}")
