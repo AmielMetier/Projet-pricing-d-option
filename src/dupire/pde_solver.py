@@ -26,10 +26,16 @@ def dupire_operator(K, t, sigma_loc, r):
     dK = K[1] - K[0]
     K_int = K[1:-1]
 
-    # sigma_loc peut renvoyer un scalaire (vol constante) ou un tableau
-    sig = np.asarray(sigma_loc(K_int, t), dtype=float) * np.ones_like(K_int)
+    # sigma_loc peut renvoyer un scalaire (vol constante) ou un tableau de la taille de K_int
+    sig = np.asarray(sigma_loc(K_int, t), dtype=float)
+    if sig.ndim == 0:
+        sig = sig * np.ones_like(K_int)
+    if sig.shape != K_int.shape:
+        raise ValueError("sigma_loc doit renvoyer un scalaire ou un tableau de la taille de K")
     if not np.all(np.isfinite(sig)):
         raise ValueError("sigma_loc a renvoyé des valeurs non finies (NaN ou inf)")
+    if np.any(sig < 0):
+        raise ValueError("sigma_loc doit être positive ou nulle")
 
     a = 0.5 * sig**2 * K_int**2      # coefficient de d2C/dK2
     b = r * K_int                    # coefficient de dC/dK (avec signe moins dans l'EDP)
@@ -59,14 +65,14 @@ def solve_dupire_pde(S0, r, sigma_loc, K_max, T_max, n_K, n_T,
     soit raisonnable.
     """
     # ---- Vérification des paramètres ----
+    if not np.isfinite([S0, r, K_max, T_max]).all():
+        raise ValueError("S0, r, K_max et T_max doivent être finis")
     if S0 <= 0:
         raise ValueError("S0 doit être strictement positif")
     if K_max <= S0:
         raise ValueError("K_max doit être supérieur à S0")
     if T_max <= 0:
         raise ValueError("T_max doit être strictement positif")
-    if not np.isfinite(r):
-        raise ValueError("r doit être fini")
     if int(n_K) != n_K or n_K < 2:
         raise ValueError("n_K doit être un entier >= 2")
     if int(n_T) != n_T or n_T < 1:
